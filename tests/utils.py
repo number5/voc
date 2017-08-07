@@ -70,6 +70,18 @@ def setUpSuite():
     if proc.returncode != 0:
         raise Exception("Error compiling java sources: " + out.decode('ascii'))
 
+    classpath = os.pathsep.join([
+        os.path.join('dist', 'python-java-testdaemon.jar'),
+        os.path.join('dist', 'python-java-support.jar'),
+    ])
+    subprocess.Popen(
+        ["java", "-classpath", classpath, "python.testdaemon.TestDaemon"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=_output_dir,
+    )
+
     _suite_configured = True
 
 
@@ -309,17 +321,7 @@ class TranspileTestCase(TestCase):
         global _output_dir
         setUpSuite()
         cls.temp_dir = os.path.join(_output_dir, 'temp')
-        classpath = os.pathsep.join([
-            os.path.join('dist', 'python-java-testdaemon.jar'),
-            os.path.join('dist', 'python-java-support.jar'),
-        ])
-        cls.jvm = subprocess.Popen(
-            ["java", "-classpath", classpath, "python.testdaemon.TestDaemon"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            cwd=_output_dir,
-        )
+
 
     @classmethod
     def tearDownClass(cls):

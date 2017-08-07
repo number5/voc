@@ -10,9 +10,55 @@ import java.security.Permission;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.InputStreamReader;
+
 public class TestDaemon {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+
+    private ServerSocket serverSocket;
+
+    public void start(int port) {
+        try {
+            serverSocket = new ServerSocket(port);
+            while (true)
+                new EchoClientHandler(serverSocket.accept()).run();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            stop();
+        }
+
+    }
+
+    public void stop() {
+        try {
+
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+        
+
+    private static class EchoClientHandler extends Thread {
+        private Socket clientSocket;
+        private PrintWriter out;
+        private BufferedReader in;
+
+        public EchoClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
+
+        public static void do_something(BufferedReader inputStream) {
+     	// old code
+        Scanner sc = new Scanner(inputStream);
         String input = "";
 
         URL voc;
@@ -97,6 +143,29 @@ public class TestDaemon {
             input = sc.nextLine();
         }
     }
+
+        public void run() {
+            try {
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                do_something(in);
+
+                in.close();
+                out.close();
+                clientSocket.close();
+
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        TestDaemon daemon = new TestDaemon();
+        daemon.start(5555);
+    }
+
+
 
     private static class NoExitSecurityManager extends SecurityManager {
         @Override
